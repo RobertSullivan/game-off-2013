@@ -1,13 +1,12 @@
-
 define('facilityList', ['underscore', 'availableFacilities',  'facility', 'facilitiesUI'],
     function(_, availableFacilities,  Facility, FacilitiesUI) {
     'use strict';
 
     return function() {
         var facilities = [];
+        var baseEnergyOutput = 5;
         var facilitiesUI = new FacilitiesUI(this, availableFacilities);
 
-        var baseEnergyOutput = 5;
         this.addFacility = function(facilityName, currentTime) {
             facilities.push([new Facility(availableFacilities[facilityName]), currentTime]);
             facilitiesUI.update(facilities);
@@ -28,6 +27,7 @@ define('facilityList', ['underscore', 'availableFacilities',  'facility', 'facil
         };
 
         this.update = function(currentTime, unfloodedLandArea) {
+
             var grossEnergyProduced = _.reduce(facilities, function(sum, next) {
                 var delta = next[0].energyDelta();
                 var energyProduced = delta > 0 ? delta : 0;
