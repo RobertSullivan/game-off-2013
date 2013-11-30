@@ -1,14 +1,15 @@
-define('facilityList', ['underscore', 'availableFacilities', 'facilitiesUI'], function(_, availableFacilities,
-                                                                                       FacilitiesUI) {
+
+define('facilityList', ['underscore', 'availableFacilities',  'facility', 'facilitiesUI'],
+    function(_, availableFacilities,  Facility, FacilitiesUI) {
     'use strict';
 
     return function() {
         var facilities = [];
-        var currentEnergy = 0;
         var facilitiesUI = new FacilitiesUI(this, availableFacilities);
 
+        var baseEnergyOutput = 5;
         this.addFacility = function(facilityName, currentTime) {
-            facilities.push([availableFacilities[facilityName], currentTime]);
+            facilities.push([new Facility(availableFacilities[facilityName]), currentTime]);
             facilitiesUI.update(facilities);
         };
 
@@ -26,18 +27,24 @@ define('facilityList', ['underscore', 'availableFacilities', 'facilitiesUI'], fu
             return facilities[index][0];
         };
 
-        this.update = function(unfloodedLandArea) {
+        this.update = function(currentTime, unfloodedLandArea) {
+            var grossEnergyProduced = _.reduce(facilities, function(sum, next) {
+                var delta = next[0].energyDelta();
+                var energyProduced = delta > 0 ? delta : 0;
+                return sum + energyProduced;
+            }, baseEnergyOutput);
+
+            _.reduce(facilities, function(energy, next) {
+                return next[0].update(energy);
+            }, grossEnergyProduced);
+
             var foodDelta =  _.reduce(facilities, function(sum, next) {
-                return sum + next[0].normalDelta.food;
+                return sum + next[0].foodDelta();
             }, 0);
-            var pollutionDelta = _.reduce(facilities, function(sum, next) { return sum + next[0].normalDelta.pollution; }, 0);
-            var energyDelta = _.reduce(facilities, function(sum, next) { return sum + next[0].normalDelta.energy; }, 0);
-            currentEnergy += energyDelta;
+            var pollutionDelta = _.reduce(facilities, function(sum, next) { return sum + next[0].pollutionDelta(); }, 0);
 
             var consumedLandArea = _.reduce(facilities, function(sum, next) { return sum + next[0].landCost; }, 0);
             var buildableLandArea = unfloodedLandArea - consumedLandArea;
-
-
 
             facilitiesUI.setAvailableLandArea(buildableLandArea);
             facilitiesUI.update(facilities);
